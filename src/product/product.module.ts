@@ -19,5 +19,6 @@ import { S3StorageRepository } from './infrastructure/persistence/s3-storage.rep
       useClass: S3StorageRepository,
     },
   ],
+  exports: [PRODUCT_REPOSITORY],
 })
 export class ProductModule {}
