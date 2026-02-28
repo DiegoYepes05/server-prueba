@@ -26,19 +26,45 @@ export class PrismaProductRepository
     super({ adapter });
   }
 
+  private toEntity(record: {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    imageUrl: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Product {
+    return new Product(
+      record.id,
+      record.name,
+      record.description,
+      record.price,
+      record.stock,
+      record.imageUrl ?? undefined,
+      record.createdAt,
+      record.updatedAt,
+    );
+  }
+
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    return this.product.create({
-      data: createProductDto,
-    });
+    const record = await this.product.create({ data: createProductDto });
+    return this.toEntity(record);
   }
 
   async findAll(): Promise<Product[]> {
-    return this.product.findMany();
+    const records = await this.product.findMany();
+    return records.map((r) => this.toEntity(r));
   }
 
   async findOne(id: string): Promise<Product | null> {
-    return this.product.findUnique({
-      where: { id },
-    });
+    const record = await this.product.findUnique({ where: { id } });
+    return record ? this.toEntity(record) : null;
+  }
+
+  async update(id: string, data: Partial<Product>): Promise<Product> {
+    const record = await this.product.update({ where: { id }, data });
+    return this.toEntity(record);
   }
 }
