@@ -1,30 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool, PoolConfig } from 'pg';
+import { PrismaService } from '../../../common/prisma.service';
 import { ProductRepository } from '../../domain/product.repository';
 import { Product } from '../../domain/product.entity';
 import { CreateProductDto } from '../../dto/create-product.dto';
 
 @Injectable()
-export class PrismaProductRepository
-  extends PrismaClient
-  implements ProductRepository
-{
-  constructor() {
-    const poolConfig: PoolConfig = {
-      host: process.env.POSTGRES_HOST,
-      port: Number(process.env.POSTGRES_PORT),
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-      database: process.env.POSTGRES_DB,
-    };
-
-    const pool = new Pool(poolConfig);
-    const adapter = new PrismaPg(pool);
-
-    super({ adapter });
-  }
+export class PrismaProductRepository implements ProductRepository {
+  constructor(private readonly prisma: PrismaService) {}
 
   private toEntity(record: {
     id: string;
@@ -49,22 +31,38 @@ export class PrismaProductRepository
   }
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    const record = await this.product.create({ data: createProductDto });
+    const record = await this.prisma.product.create({ data: createProductDto });
     return this.toEntity(record);
   }
 
   async findAll(): Promise<Product[]> {
-    const records = await this.product.findMany();
+    const records = await this.prisma.product.findMany();
     return records.map((r) => this.toEntity(r));
   }
 
   async findOne(id: string): Promise<Product | null> {
-    const record = await this.product.findUnique({ where: { id } });
+    const record = await this.prisma.product.findUnique({ where: { id } });
     return record ? this.toEntity(record) : null;
   }
 
   async update(id: string, data: Partial<Product>): Promise<Product> {
-    const record = await this.product.update({ where: { id }, data });
+    const record = await this.prisma.product.update({ where: { id }, data });
     return this.toEntity(record);
+  }
+
+  async decrementStock(id: string): Promise<Product> {
+    const record = await this.prisma.product.update({
+      where: { id },
+      data: {
+        stock: {
+          decrement: 1,
+        },
+      },
+    });
+    return this.toEntity(record);
+  }
+
+  async deleteMany(): Promise<void> {
+    await this.prisma.$executeRawUnsafe('TRUNCATE TABLE "Product" CASCADE;');
   }
 }

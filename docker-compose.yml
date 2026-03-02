@@ -1,17 +1,19 @@
 services:
-  # app:
-  #   container_name: server_prueba
-  #   build:
-  #     context: .
-  #     dockerfile: dockerfile
-  #   restart: always
-  #   ports:
-  #     - "${PORT:-3000}:3000"
-  #   environment:
-  #     - DATABASE_URL=${DATABASE_URL}
-  #     - PORT=${PORT}
-  #   depends_on:
-  #     - products-db
+  app:
+    container_name: server_prueba
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: dockerfile
+    restart: always
+    ports:
+      - "${PORT:-3000}:3000"
+    command: sh -c "npx prisma migrate deploy && pnpm start:prod"
+    depends_on:
+      products-db:
+        condition: service_healthy
+
   products-db:
     container_name: products_database
     image: postgres:16.2
@@ -24,5 +26,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-
- 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
