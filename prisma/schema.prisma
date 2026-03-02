@@ -25,7 +25,6 @@ model User {
   id           String        @id @default(uuid())
   name         String
   email        String        @unique
-  password     String
   phone        String
   legalId      String
   legalIdType  String        @default("CC")
@@ -51,15 +50,18 @@ model Product {
 }
 
 model Transaction {
-  id            String            @id @default(uuid())
-  wompiId       String?           @unique
-  reference     String            @unique
-  amountInCents Int
-  currency      String            @default("COP")
-  status        TransactionStatus @default(PENDING)
-  installments  Int               @default(1)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id                 String            @id @default(uuid())
+  wompiId            String?           @unique
+  reference          String            @unique
+  amountInCents      Int
+  currency           String            @default("COP")
+  status             TransactionStatus @default(PENDING)
+  installments       Int               @default(1)
+  shippingAddress    String?
+  shippingCity       String?
+  shippingDepartment String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
